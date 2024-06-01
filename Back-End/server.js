@@ -8,6 +8,7 @@ const cookieParser = require("cookie-parser");
 const adminRoute = require("./routes/adminRoute");
 
 const app = express();
+app.use(cors());
 dotenv.config();
 const port = process.env.PORT || 3000;
 
