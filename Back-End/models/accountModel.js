@@ -6,7 +6,7 @@ const accountSchema = new Schema(
     username: {
       type: String,
       require: true,
-      minlength: 6,
+      minlength: 5,
       maxlength: 20,
       unique: true,
     },
@@ -23,6 +23,10 @@ const accountSchema = new Schema(
     isAdmin: {
       type: Boolean,
       default: false,
+    },
+    phone: {
+      type: String,
+      require: true,
     },
   },
   {

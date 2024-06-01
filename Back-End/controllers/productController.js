@@ -1,7 +1,7 @@
 const productModel = require("../models/productModel");
 
 module.exports = {
-  get: (req, res, next) => {
+  getAll: (req, res, next) => {
     productModel
       .find({})
       .then((data) => {

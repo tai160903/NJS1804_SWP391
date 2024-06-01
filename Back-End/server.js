@@ -5,6 +5,8 @@ const bodyParser = require("body-parser");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+const adminRoute = require("./routes/adminRoute");
+
 const app = express();
 dotenv.config();
 const port = process.env.PORT || 3000;
@@ -21,11 +23,8 @@ app.use(cookieParser());
 app.use(express.json());
 
 app.use("/", homeRoute);
+app.use("/admin", adminRoute);
 
 app.listen(port, () => {
   console.log(`Server started port: ${port}`);
 });
-
-//AUTHENTICATION
-
-//AUTORIZATION

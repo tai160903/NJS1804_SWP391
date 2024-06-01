@@ -1,7 +1,10 @@
 const accountModel = require("../models/accountModel");
+// const refeshTokenModel = require("../models/refeshTokenModel");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
-module.exports = {
+let refeshTokenArray = [];
+const authController = {
   register: async (req, res) => {
     try {
       var { username, password, email } = req.body;
@@ -34,6 +37,32 @@ module.exports = {
     }
   },
 
+  generateAccessToken: (account) => {
+    return jwt.sign(
+      {
+        id: account.id,
+        admin: account.isAdmin,
+      },
+      process.env.JWT_ACCESS_KEY,
+      {
+        expiresIn: "1d",
+      }
+    );
+  },
+
+  generateRefeshToken: (account) => {
+    return jwt.sign(
+      {
+        id: account.id,
+        admin: account.isAdmin,
+      },
+      process.env.JWT_REFESH_KEY,
+      {
+        expiresIn: "365d",
+      }
+    );
+  },
+
   login: async (req, res) => {
     try {
       const account = await accountModel.findOne({
@@ -50,10 +79,57 @@ module.exports = {
         res.status(404).json("Wrong password");
       }
       if (account && validPassword) {
-        res.status(200).json(account);
+        const accessToken = authController.generateAccessToken(account);
+        const refeshToken = authController.generateRefeshToken(account);
+        refeshTokenArray.push(refeshToken);
+        res.cookie("refeshToken", refeshToken, {
+          httpOnly: true,
+          secure: false, //deploy chuyen thanh true
+          path: "/",
+          sameSite: "strict",
+        });
+        const { password, ...others } = account._doc;
+        res.status(200).json({ ...others, accessToken });
       }
     } catch (err) {
       res.status(500).json(err);
     }
   },
+
+  requestRefeshToken: async (req, res) => {
+    //take refesh token from user
+    const refeshToken = req.cookies.refeshToken;
+    if (!refeshToken) return res.status(401).json("You're not authenticated!");
+    if (!refeshTokenArray.includes(refeshToken)) {
+      return res.status(403).json("Refresh token is not valid");
+    }
+    jwt.verify(refeshToken, process.env.JWT_REFESH_KEY, (err, account) => {
+      if (err) {
+        console.log(err);
+      }
+      refeshTokenArray = refeshTokenArray.filter(
+        (token) => token !== refeshToken
+      );
+      const newAccessToken = authController.generateAccessToken(account);
+      const newRefeshToken = authController.generateRefeshToken(account);
+      refeshTokenArray.push(newRefeshToken);
+      res.cookie("refeshToken", newRefeshToken, {
+        httpOnly: true,
+        secure: false, //deploy chuyen thanh true
+        path: "/",
+        sameSite: "strict",
+      });
+      res.status(200).json({ accessToken: newAccessToken });
+    });
+  },
+
+  logout: async (req, res) => {
+    res.clearCookie("refeshToken");
+    refeshTokenArray = refeshTokenArray.filter(
+      (token) => token !== req.cookies.refeshToken
+    );
+    res.status(200).json("Logout successfully");
+  },
 };
+
+module.exports = authController;
