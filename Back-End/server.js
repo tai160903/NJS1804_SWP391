@@ -6,7 +6,7 @@ const dotenv = require("dotenv");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const adminRoute = require("./routes/adminRoute");
-
+//branch tai
 const app = express();
 app.use(cors());
 dotenv.config();
